@@ -1,0 +1,39 @@
+PASSWORD=HelloAKS@2025
+
+az ad group create --display-name aks-operators --mail-nickname aks-operators
+az ad group create --display-name aks-developers --mail-nickname aks-developers
+
+az ad user create \
+  --display-name "Inhwan Jung (Operator)" \
+  --user-principal-name operator1@jupyteronlinegmail.onmicrosoft.com \
+  --password $PASSWORD
+
+az ad user create \
+  --display-name "Inhwan Jung (Developer)" \
+  --user-principal-name developer1@jupyteronlinegmail.onmicrosoft.com \
+  --password $PASSWORD
+
+az ad user create \
+  --display-name "Inhwan Jung (Developer)" \
+  --user-principal-name developer2@jupyteronlinegmail.onmicrosoft.com \
+  --password $PASSWORD
+
+az ad user show --id operator1@jupyteronlinegmail.onmicrosoft.com
+az ad user show --id developer1@jupyteronlinegmail.onmicrosoft.com
+az ad user show --id developer2@jupyteronlinegmail.onmicrosoft.com
+
+USER=$(az ad user show --id operator1@jupyteronlinegmail.onmicrosoft.com --query id -o tsv)
+az ad group member add --group aks-operators --member-id $USER
+az ad group member list --group aks-operators --query [].userPrincipalName -o table
+az ad group member check --group aks-operators --member-id $USER
+#az ad group member remove --group aks-developers --member-id $USER
+
+
+USER=$(az ad user show --id developer1@jupyteronlinegmail.onmicrosoft.com --query id -o tsv)
+az ad group member add --group aks-developers --member-id $USER
+USER=$(az ad user show --id developer2@jupyteronlinegmail.onmicrosoft.com --query id -o tsv)
+az ad group member add --group aks-developers --member-id $USER
+
+az ad group member list --group aks-developers --query [].userPrincipalName -o table
+az ad group member check --group aks-developers --member-id $USER
+#az ad group member remove --group aks-developers --member-id $USER

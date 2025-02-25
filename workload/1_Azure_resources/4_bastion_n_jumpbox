@@ -1,0 +1,39 @@
+PASSWORD="HelloAKS@2025"
+
+az network public-ip create \
+    --resource-group $HUB_RG  \
+    --name Bastion-PIP \
+    --sku Standard \
+    --allocation-method Static
+
+Bastion_PIP=$(az network public-ip show --name Bastion-PIP --resource-group $HUB_RG --query ipAddress -o tsv
+)
+
+# Create the jumpbox VM
+az vm create \
+    --resource-group $HUB_RG \
+    --name $JUMPBOX_VM_NAME \
+    --image Ubuntu2204 \
+    --admin-username azureuser \
+    --admin-password $PASSWORD \
+    --vnet-name $HUB_VNET_NAME \
+    --subnet $JUMPBOX_SUBNET_NAME \
+    --size Standard_B2s \
+    --storage-sku Standard_LRS \
+    --os-disk-name $JUMPBOX_VM_NAME-VM-osdisk \
+    --os-disk-size-gb 128 \
+    --public-ip-address $Bastion_PIP \
+    --nsg "" 
+
+# Create the Bastion Host
+az network bastion create \
+    --resource-group $HUB_RG \
+    --name bastionhost \
+    --public-ip-address Bastion-PIP \
+    --vnet-name $HUB_VNET_NAME \
+    --location $LOCATION
+
+az network bastion show \
+    --resource-group $HUB_RG \
+    --name bastionhost     
+

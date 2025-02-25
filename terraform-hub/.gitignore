@@ -1,0 +1,2 @@
+terraform-spoke/environments/dev/env/.env.spoke
+terraform-spoke/environments/dev/terraform.tfvars
