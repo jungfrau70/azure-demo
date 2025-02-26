@@ -370,7 +370,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "private_dns_zone_virtu
 }
 
 resource "azurerm_resource_group" "rg_spoke2" {
-  name     = "rg-spoke2"
+  name     = var.aks_resource_group_name
   location = var.location
 }
 
@@ -422,8 +422,8 @@ data "azurerm_kubernetes_cluster" "aks_cluster" {
 }
 
 resource "azurerm_subnet" "app_gateway_subnet" {
-  name                 = "app-gateway-subnet"
+  name                 = var.subnet_app_gateway_name
   resource_group_name  = azurerm_resource_group.hub_rg.name
   virtual_network_name = azurerm_virtual_network.hub.name
-  address_prefixes     = ["10.0.2.0/24"]
+  address_prefixes     = [var.subnet_app_gateway_prefix]
 } 

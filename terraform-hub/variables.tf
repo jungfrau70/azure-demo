@@ -237,6 +237,13 @@ variable "vnet_spoke2_prefix" {
   type        = string
 }
 
+variable "subnet_app_gateway_prefix" {
+  description = "The prefix of the App Gateway subnet."
+  type        = string
+}
 
-
+variable "subnet_app_gateway_name" {
+  description = "The name of the App Gateway subnet."
+  type        = string
+}
 
