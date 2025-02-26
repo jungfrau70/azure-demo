@@ -10,7 +10,7 @@ echo "🔹 공유 폴더 이름: $FILE_SHARE_NAME"
 
 ### **🔹 공유 폴더 생성**  
 ```bash
-az storage share create --name $FILE_SHARE_NAME --account-name $STORAGE_ACCOUNT_NAME --enable-files-aadds true
+az storage share create --name $FILE_SHARE_NAME --account-name $STORAGE_ACCOUNT_NAME --enable-files-aadds true --quota 100
 ```
 
 
@@ -29,6 +29,7 @@ az storage file upload-batch \
 az storage file list \
     --share-name $FILE_SHARE_NAME \
     --account-name $STORAGE_ACCOUNT_NAME \
+    --auth-mode login \
     --output table
 ```
 
@@ -38,3 +39,10 @@ aks_archi_checklist.sh  2848              file    2025-02-26T11:52:58+00:00
 aks_archi_env.sh        191               file    2025-02-26T11:52:58+00:00
 aks_checklist.sh        3882              file    2025-02-26T11:52:58+00:00
 env.sh                  184               file    2025-02-26T11:52:58+00:00
+
+### **🔹 공유 폴더에서 Bash 스크립트 실행**
+```bash
+cd $MOUNT_POINT
+bash aks_checklist.sh
+```
+

@@ -293,4 +293,110 @@ output "log_analytics_workspace_key" {
 
 output "monitor_action_group_id" {
   value = module.monitoring.action_group_id
+}
+
+# Azure Application Gateway 설정
+resource "azurerm_application_gateway" "app_gateway" {
+  name                = var.app_gateway_name
+  location            = azurerm_resource_group.hub_rg.location
+  resource_group_name = azurerm_resource_group.hub_rg.name
+
+  sku {
+    name     = var.app_gateway_sku_name
+    tier     = var.app_gateway_sku_tier
+    capacity = var.app_gateway_capacity
+  }
+
+  gateway_ip_configuration {
+    name      = "appGatewayIpConfig"
+    subnet_id = azurerm_subnet.fw_subnet.id
+  }
+
+  frontend_port {
+    name = "frontendPort"
+    port = var.app_gateway_frontend_port
+  }
+
+  frontend_ip_configuration {
+    name                 = "appGatewayFrontendIP"
+    public_ip_address_id = azurerm_public_ip.public_ip.id
+  }
+
+  backend_address_pool {
+    name = "backendAddressPool"
+  }
+
+  backend_http_settings {
+    name                  = "httpSettings"
+    cookie_based_affinity = "Disabled"
+    port                  = 80
+    protocol              = "Http"
+    request_timeout       = 60
+  }
+
+  http_listener {
+    name                           = "appGatewayHttpListener"
+    frontend_ip_configuration_name = "appGatewayFrontendIP"
+    frontend_port_name             = "frontendPort"
+    protocol                       = "Http"
+  }
+
+  request_routing_rule {
+    name                       = "rule1"
+    rule_type                  = "Basic"
+    http_listener_name         = "appGatewayHttpListener"
+    backend_address_pool_name  = "backendAddressPool"
+    backend_http_settings_name = "httpSettings"
+  }
+
+  tags = {
+    environment = var.environment_name
+    project     = var.project_name
+  }
+}
+
+# Private DNS Zone 및 Private Endpoint 설정
+resource "azurerm_private_dns_zone" "private_dns_zone" {
+  name                = var.private_dns_zone_name
+  resource_group_name = azurerm_resource_group.hub_rg.name
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "private_dns_zone_virtual_network_link" {
+  name                  = "aks-link"
+  resource_group_name   = azurerm_resource_group.hub_rg.name
+  private_dns_zone_name = azurerm_private_dns_zone.private_dns_zone.name
+  virtual_network_id    = azurerm_virtual_network.hub.id
+}
+
+resource "azurerm_private_endpoint" "private_endpoint" {
+  name                = var.private_endpoint_name
+  location            = azurerm_resource_group.hub_rg.location
+  resource_group_name = azurerm_resource_group.hub_rg.name
+  subnet_id           = azurerm_subnet.fw_subnet.id
+
+  private_service_connection {
+    name                           = var.private_connection_name
+    private_connection_resource_id = data.azurerm_kubernetes_cluster.aks_cluster.id
+    subresource_names              = ["management"]
+    is_manual_connection           = false
+  }
+}
+
+resource "azurerm_public_ip" "public_ip" {
+  name                = var.public_ip_name
+  location            = azurerm_resource_group.hub_rg.location
+  resource_group_name = azurerm_resource_group.hub_rg.name
+  allocation_method   = "Static"
+
+  sku = "Standard"
+
+  tags = {
+    environment = var.environment_name
+    project     = var.project_name
+  }
+}
+
+data "azurerm_kubernetes_cluster" "aks_cluster" {
+  name                = var.aks_cluster_name
+  resource_group_name = var.aks_resource_group_name
 } 

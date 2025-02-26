@@ -166,3 +166,63 @@ variable "vnet_spoke2_name" {
   type        = string
   description = "Spoke VNet 이름"
 } 
+
+# Application Gateway 관련 변수
+variable "app_gateway_name" {
+  description = "The name of the Application Gateway."
+  type        = string
+}
+
+variable "app_gateway_sku_name" {
+  description = "The SKU name of the Application Gateway."
+  type        = string
+}
+
+variable "app_gateway_sku_tier" {
+  description = "The SKU tier of the Application Gateway."
+  type        = string
+}
+
+variable "app_gateway_capacity" {
+  description = "The capacity of the Application Gateway."
+  type        = number
+}
+
+variable "app_gateway_frontend_port" {
+  description = "The frontend port of the Application Gateway."
+  type        = number
+}
+
+# Public IP 관련 변수
+variable "public_ip_name" {
+  description = "The name of the public IP for the Application Gateway."
+  type        = string
+}
+
+# Private DNS Zone 관련 변수
+variable "private_dns_zone_name" {
+  description = "The name of the Private DNS Zone."
+  type        = string
+}
+
+# Private Endpoint 관련 변수
+variable "private_endpoint_name" {
+  description = "The name of the Private Endpoint."
+  type        = string
+}
+
+variable "private_connection_name" {
+  description = "The name of the Private Connection."
+  type        = string
+}
+
+# AKS 클러스터 관련 변수
+variable "aks_cluster_name" {
+  description = "The name of the AKS cluster."
+  type        = string
+}
+
+variable "aks_resource_group_name" {
+  description = "The resource group name of the AKS cluster."
+  type        = string
+} 

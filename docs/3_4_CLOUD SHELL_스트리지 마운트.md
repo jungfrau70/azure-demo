@@ -30,14 +30,17 @@ echo "🔹 스토리지 키: $STORAGE_KEY"
 
 ## **4. Azure Cloud Shell에서 공유 스토리지 마운트**
 
-
 ### **4.1 기본적으로 Storage Account를 Cloud Shell에 연결**
 ```sh
 az storage account show --name $STORAGE_ACCOUNT_NAME --resource-group $RESOURCE_GROUP
 ```
 이후, Cloud Shell의 기본 스토리지가 자동으로 연결됩니다.
 
-###
+### **4.2 스토리지 마운트**
+```sh
+sudo mkdir -p $MOUNT_POINT
+sudo mount -t cifs //$STORAGE_ACCOUNT_NAME.file.core.windows.net/$FILE_SHARE_NAME $MOUNT_POINT -o vers=3.0,username=$STORAGE_ACCOUNT_NAME,password=$STORAGE_KEY,dir_mode=0777,file_mode=0777,sec=ntlmssp
+```
 
 az storage account update --name $STORAGE_ACCOUNT_NAME --resource-group $RESOURCE_GROUP --enable-files-aadds true
 
