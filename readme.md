@@ -44,7 +44,7 @@ prerequisites.md 참고
    az network private-endpoint list --resource-group rg-spoke-dev -o table
    
    # 크기 설정
-   export TF_VAR_aks_node_size="Standard_D2s_v3"
+   export TF_VAR_aks_node_size="Standard_D8s_v3"
 
 ## 3. 디렉토리 구조
 ```
@@ -82,7 +82,6 @@ prerequisites.md 참고
 ### 4.1. Hub 배포 (공통 인프라)
 ```bash
 cd terraform-hub
-source env/.env.hub
 terraform init -backend-config=backend.hcl
 terraform plan
 terraform apply
@@ -91,7 +90,6 @@ terraform apply
 ### 4.2. Spoke 배포 (애플리케이션 인프라)
 ```bash
 cd terraform-spoke/environments/dev
-source env/.env.spoke
 terraform init -backend-config=backend.hcl
 terraform plan
 terraform apply
@@ -222,3 +220,61 @@ az aks create --resource-group $TF_VAR_resource_group_name --name $TF_VAR_aks_cl
 
 az aks create --resource-group $TF_VAR_resource_group_name --name $TF_VAR_aks_cluster_name --network-plugin azure \
             --vnet-subnet-id /subscriptions/b6f97aed-4542-491f-a94c-e0f05563485c/resourceGroups/rg-spoke-dev/providers/Microsoft.Network/virtualNetworks/vnet-spoke-dev/subnets/snet-aks --ssh-key-value ~/.ssh/id_rsa_aks.pub
+
+
+
+###############################################################################
+
+$ az network vnet subnet list --resource-group rg-spoke-dev --vnet-name vnet-spoke-dev --query "[].{Name:name, Address:addressPrefix}" -o table
+Name            Address
+--------------  -----------
+GatewaySubnet   10.2.7.0/24
+snet-app        10.2.4.0/24
+snet-aks        10.2.0.0/22
+snet-appgw      10.2.8.0/24
+snet-db         10.2.5.0/24
+snet-endpoints  10.2.6.0/24
+
+az network vnet subnet list --resource-group rg-spoke-dev --vnet-name vnet-spoke-dev -o table
+
+## 1. 네트워크 구성
+
+### 1.1. Hub 네트워크 (10.0.0.0/16)
+- AzureFirewallSubnet: 10.0.1.0/24
+- AzureBastionSubnet: 10.0.2.0/24
+- Jumpbox Subnet: 10.0.3.0/24
+- KeyVault Subnet: 10.0.4.0/24
+
+### 1.2. Spoke 네트워크 (10.2.0.0/16)
+- AKS Subnet: 10.2.1.0/24
+- Load Balancer Subnet: 10.2.2.0/28
+- App Gateway Subnet: 10.2.3.0/24
+- Endpoints Subnet: 10.2.4.0/24
+- App Subnet: 10.2.5.0/24
+- DB Subnet: 10.2.6.0/24
+- Gateway Subnet: 10.2.7.0/24
+
+### 1.3. AKS 네트워크 설정
+- 네트워크 플러그인: Azure CNI
+- 서비스 CIDR: 10.0.0.0/16
+- DNS 서비스 IP: 10.0.0.10
+- Docker Bridge CIDR: 172.17.0.1/16
+
+## 2. 보안 구성
+- Key Vault
+- NSG (Bastion, Jumpbox)
+- Azure Firewall
+- Private Endpoints
+
+## 3. 컨테이너 구성
+- Premium SKU ACR
+- AKS (Azure CNI)
+
+## 4. 모니터링
+- Log Analytics Workspace
+- Monitor Action Group
+
+## 5. 배포 순서
+1. Hub 인프라 배포
+2. Spoke 인프라 배포
+3. AKS 및 애플리케이션 배포

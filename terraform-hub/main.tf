@@ -1,3 +1,28 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+  }
+
+  backend "azurerm" {}  # backend.hcl에서 설정을 가져옴
+}
+
+# Azure Provider 설정
+provider "azurerm" {
+  features {
+    key_vault {
+      purge_soft_delete_on_destroy = true
+      recover_soft_deleted_key_vaults = true
+    }
+  }
+}
+
 # 리소스 그룹
 resource "azurerm_resource_group" "hub_rg" {
   name     = var.rg_hub_name
@@ -48,14 +73,50 @@ resource "random_string" "resource_suffix" {
 
 # Key Vault
 resource "azurerm_key_vault" "hub_kv" {
-  name                = "${var.project_name}-kv-${random_string.resource_suffix.result}"
-  location            = azurerm_resource_group.hub_rg.location
-  resource_group_name = azurerm_resource_group.hub_rg.name
-  tenant_id          = data.azurerm_client_config.current.tenant_id
-  sku_name           = "standard"
+  name                        = "${var.project_name}${var.environment_name}kv${random_string.resource_suffix.result}"
+  location                    = azurerm_resource_group.hub_rg.location
+  resource_group_name         = azurerm_resource_group.hub_rg.name
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  sku_name                    = "standard"
+  enabled_for_disk_encryption = true
+  
+  # Soft Delete 및 Purge 보호 설정
+  soft_delete_retention_days  = 7
+  purge_protection_enabled    = false
+  enable_rbac_authorization   = false
 
-  soft_delete_retention_days = 7
-  purge_protection_enabled   = false
+  # Key Vault 접근 정책
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+
+    key_permissions = [
+      "Get", "List", "Create", "Delete", "Update", "Recover", "Purge"
+    ]
+
+    secret_permissions = [
+      "Get", "List", "Set", "Delete", "Recover", "Purge"
+    ]
+
+    certificate_permissions = [
+      "Get", "List", "Create", "Delete", "Update", "Recover", "Purge"
+    ]
+  }
+
+  # 네트워크 규칙
+  network_acls {
+    default_action = "Allow"
+    bypass         = "AzureServices"
+  }
+
+  lifecycle {
+    prevent_destroy = false
+  }
+
+  tags = {
+    environment = var.environment_name
+    project     = var.project_name
+  }
 }
 
 # ACR

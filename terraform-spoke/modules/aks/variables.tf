@@ -58,8 +58,8 @@ variable "default_node_pool" {
   default = {
     name      = "default"
     vm_size   = "Standard_D2s_v3"  # 기본값 설정
-    min_count = 1
-    max_count = 3
+    min_count = 3
+    max_count = 5
   }
 }
 
@@ -83,4 +83,16 @@ variable "log_analytics_workspace_id" {
 variable "ssh_public_key" {
   type        = string
   description = "SSH public key for AKS nodes"
+}
+
+variable "cluster_config" {
+  description = "AKS 클러스터 설정"
+  type = object({
+    private_cluster_enabled = bool
+    api_server_authorized_ip_ranges = list(string)
+    network_plugin = string
+    network_policy = string
+    service_cidr = string
+    dns_service_ip = string
+  })
 }

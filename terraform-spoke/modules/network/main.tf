@@ -10,23 +10,24 @@ resource "azurerm_virtual_network" "spoke" {
 resource "azurerm_subnet" "subnets" {
   for_each = var.subnets
 
-  name                 = each.key == "gateway" ? "GatewaySubnet" : "snet-${each.key}"
-  resource_group_name  = var.spoke_rg
+  name                 = each.value.name
+  resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.spoke.name
   address_prefixes     = each.value.address_prefixes
   service_endpoints    = lookup(each.value, "service_endpoints", [])
 
   dynamic "delegation" {
-    for_each = each.value.delegation != null ? [each.value.delegation] : []
+    for_each = lookup(each.value, "delegation", null) != null ? [each.value.delegation] : []
     content {
       name = delegation.value.name
-      
-      dynamic "service_delegation" {
-        for_each = delegation.value.service_delegation
-        content {
-          name    = service_delegation.value.name
-          actions = service_delegation.value.actions
-        }
+
+      service_delegation {
+        name = "Microsoft.DBforPostgreSQL/flexibleServers"
+        actions = [
+          "Microsoft.Network/virtualNetworks/subnets/join/action",
+          "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action",
+          "Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action"
+        ]
       }
     }
   }

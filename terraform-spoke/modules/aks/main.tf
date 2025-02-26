@@ -24,8 +24,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   location                          = var.location
   resource_group_name               = var.resource_group_name
   dns_prefix                        = var.dns_prefix
-  private_cluster_enabled           = true
-  private_dns_zone_id               = "System"
+  private_cluster_enabled           = var.cluster_config.private_cluster_enabled
   kubernetes_version                = var.kubernetes_version
   sku_tier                          = var.sku_tier
   role_based_access_control_enabled = true
@@ -50,12 +49,12 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 
   network_profile {
-    network_plugin    = "azure"
-    network_policy    = "azure"
+    network_plugin = var.cluster_config.network_plugin
+    network_policy = var.cluster_config.network_policy
+    service_cidr = var.cluster_config.service_cidr
+    dns_service_ip = var.cluster_config.dns_service_ip
     load_balancer_sku = "standard"
     outbound_type     = "userDefinedRouting"
-    dns_service_ip    = "10.2.16.10"
-    service_cidr      = "10.2.16.0/24"
   }
 
   linux_profile {
@@ -81,6 +80,10 @@ resource "azurerm_kubernetes_cluster" "aks" {
   key_vault_secrets_provider {
     secret_rotation_enabled  = true
     secret_rotation_interval = "2m"
+  }
+
+  api_server_access_profile {
+    authorized_ip_ranges = var.cluster_config.api_server_authorized_ip_ranges
   }
 
   tags = var.tags

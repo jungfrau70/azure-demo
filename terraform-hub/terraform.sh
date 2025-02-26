@@ -5,18 +5,12 @@ timestamp=$(date +%Y%m%d_%H%M%S)
 output_dir="terraform_logs"
 mkdir -p $output_dir
 
-# outputs.tf 파일이 있다면 삭제
-if [ -f "outputs.tf" ]; then
-    echo "중복된 outputs.tf 파일을 삭제합니다..."
-    rm outputs.tf
-fi
-
 # backend.hcl 파일 확인
 if [ ! -f "backend.hcl" ]; then
     cat > backend.hcl << EOF
 storage_account_name = "terraformstate5428"
 container_name      = "tfstate"
-key                = "hub.tfstate"
+key                = "spoke.tfstate"
 resource_group_name = "terraform-state-rg"
 EOF
     echo "backend.hcl 파일이 생성되었습니다."
