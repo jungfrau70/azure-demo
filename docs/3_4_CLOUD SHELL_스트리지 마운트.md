@@ -36,13 +36,46 @@ az storage account show --name $STORAGE_ACCOUNT_NAME --resource-group $RESOURCE_
 ```
 이후, Cloud Shell의 기본 스토리지가 자동으로 연결됩니다.
 
-### **4.2 스토리지 마운트**
-```sh
-sudo mkdir -p $MOUNT_POINT
-sudo mount -t cifs //$STORAGE_ACCOUNT_NAME.file.core.windows.net/$FILE_SHARE_NAME $MOUNT_POINT -o vers=3.0,username=$STORAGE_ACCOUNT_NAME,password=$STORAGE_KEY,dir_mode=0777,file_mode=0777,sec=ntlmssp
+
+### **🔹 공유 폴더 내용 확인**  
+```bash
+STORAGE_KEY=$(az storage account keys list --account-name $STORAGE_ACCOUNT_NAME --resource-group $RESOURCE_GROUP --query [0].value --output tsv)
+
+az storage file list \
+    --share-name $FILE_SHARE_NAME \
+    --account-name $STORAGE_ACCOUNT_NAME \
+    --account-key $STORAGE_KEY \
+    --output table
 ```
 
-az storage account update --name $STORAGE_ACCOUNT_NAME --resource-group $RESOURCE_GROUP --enable-files-aadds true
 
-az cloud-shell create --storage-account $STORAGE_ACCOUNT_NAME --resource-group $RESOURCE_GROUP
+### **4.3 스크립트 다운로드 및 실행**
+```bash
+cat <<EOF > ~/aks_archi_checklist.sh
+#!/bin/bash
+
+# 변수 설정
+STORAGE_ACCOUNT_NAME="akscloudshellstorage"
+FILE_SHARE_NAME="aks-quickshell-share"
+
+STORAGE_KEY=$(az storage account keys list --account-name $STORAGE_ACCOUNT_NAME --resource-group rg-aks-cloudshell --query [0].value --output tsv)
+
+# 파일 다운로드
+az storage file download \
+    --share-name $FILE_SHARE_NAME \
+    --account-name $STORAGE_ACCOUNT_NAME \
+    --account-key $STORAGE_KEY \
+    --path aks_archi_checklist.sh \
+    --dest ./aks_archi_checklist.sh
+
+# 스크립트 실행
+bash mkdir -p $MOUNT_POINT
+bash mount -t cifs //$STORAGE_ACCOUNT_NAME.file.core.windows.net/$FILE_SHARE_NAME $MOUNT_POINT -o vers=3.0,username=$STORAGE_ACCOUNT_NAME,password=$STORAGE_KEY,dir_mode=0777,file_mode=0777,sec=ntlmssp
+bash ./aks_archi_checklist.sh
+
+EOF
+
+chmod +x ~/aks_archi_checklist.sh
+
+
 

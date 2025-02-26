@@ -226,3 +226,17 @@ variable "aks_resource_group_name" {
   description = "The resource group name of the AKS cluster."
   type        = string
 } 
+
+variable "subnet_aks_private_prefix" {
+  description = "The prefix of the AKS private subnet."
+  type        = string
+}
+
+variable "vnet_spoke2_prefix" {
+  description = "The prefix of the Spoke VNet."
+  type        = string
+}
+
+
+
+

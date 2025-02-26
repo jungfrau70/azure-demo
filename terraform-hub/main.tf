@@ -309,7 +309,7 @@ resource "azurerm_application_gateway" "app_gateway" {
 
   gateway_ip_configuration {
     name      = "appGatewayIpConfig"
-    subnet_id = azurerm_subnet.fw_subnet.id
+    subnet_id = azurerm_subnet.app_gateway_subnet.id
   }
 
   frontend_port {
@@ -347,6 +347,7 @@ resource "azurerm_application_gateway" "app_gateway" {
     http_listener_name         = "appGatewayHttpListener"
     backend_address_pool_name  = "backendAddressPool"
     backend_http_settings_name = "httpSettings"
+    priority                   = 100
   }
 
   tags = {
@@ -368,11 +369,30 @@ resource "azurerm_private_dns_zone_virtual_network_link" "private_dns_zone_virtu
   virtual_network_id    = azurerm_virtual_network.hub.id
 }
 
+resource "azurerm_resource_group" "rg_spoke2" {
+  name     = "rg-spoke2"
+  location = var.location
+}
+
+resource "azurerm_virtual_network" "vnet_spoke2_name" {
+  name                = var.vnet_spoke2_name
+  address_space       = [var.vnet_spoke2_prefix]
+  location            = azurerm_resource_group.rg_spoke2.location
+  resource_group_name = azurerm_resource_group.rg_spoke2.name
+}
+
+resource "azurerm_subnet" "snet_aks_private" {
+  name                 = "snet-aks-private"
+  resource_group_name  = azurerm_resource_group.rg_spoke2.name
+  virtual_network_name = azurerm_virtual_network.vnet_spoke2_name.name
+  address_prefixes     = [var.subnet_aks_private_prefix]
+}
+
 resource "azurerm_private_endpoint" "private_endpoint" {
   name                = var.private_endpoint_name
-  location            = azurerm_resource_group.hub_rg.location
-  resource_group_name = azurerm_resource_group.hub_rg.name
-  subnet_id           = azurerm_subnet.fw_subnet.id
+  location            = azurerm_resource_group.rg_spoke2.location
+  resource_group_name = azurerm_resource_group.rg_spoke2.name
+  subnet_id           = azurerm_subnet.snet_aks_private.id
 
   private_service_connection {
     name                           = var.private_connection_name
@@ -399,4 +419,11 @@ resource "azurerm_public_ip" "public_ip" {
 data "azurerm_kubernetes_cluster" "aks_cluster" {
   name                = var.aks_cluster_name
   resource_group_name = var.aks_resource_group_name
+}
+
+resource "azurerm_subnet" "app_gateway_subnet" {
+  name                 = "app-gateway-subnet"
+  resource_group_name  = azurerm_resource_group.hub_rg.name
+  virtual_network_name = azurerm_virtual_network.hub.name
+  address_prefixes     = ["10.0.2.0/24"]
 } 
