@@ -163,4 +163,20 @@ variable "tags" {
   description = "리소스에 적용될 태그"
   type        = map(string)
   default     = {}
+}
+
+# variable "spoke_vnet_id" {
+#   type        = string
+#   description = "Spoke VNet의 ID"
+#   default     = null  # 선택적으로 만들기 위해 기본값 null 설정
+# }
+
+variable "vnet_spoke1_name" {
+  type        = string
+  description = "Spoke VNet 이름"
+} 
+
+variable "vnet_spoke2_name" {
+  type        = string
+  description = "Spoke VNet 이름"
 } 

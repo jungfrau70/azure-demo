@@ -8,16 +8,30 @@ AKS 클러스터를 운영하면서 컨텍스트를 전환하여 사용 가능
 5. 필요 시 `kubectl config delete-context`로 정리  
 
 **변수 설정**
+
+SUBSCRIPTION_ID=$(az account show --query id --output tsv)
+az account set --subscription $SUBSCRIPTION_ID
+LOCATION="koreacentral"
+
 RESOURCE_GROUP_1="rg-spoke1"
 VNET_NAME_1="vnet-spoke1"
-AKS_CLUSTER_NAME_1="myPublicAKSCluster"
+AKS_SUBNET_NAME_1="snet-aks-private"
+AKS_CLUSTER_NAME_1="public-aks"
 
 RESOURCE_GROUP_2="rg-spoke2"
 VNET_NAME_2="vnet-spoke2"
-AKS_SUBNET_NAME="snet-aks-private"
-AKS_CLUSTER_NAME_2="myPrivateAKSCluster"
+AKS_SUBNET_NAME_2="snet-aks-private"
+AKS_CLUSTER_NAME_2="myaks"
 
-### 1. **현재 설정된 컨텍스트 확인**
+### 1. **새로운 AKS 클러스터 컨텍스트 가져오기**
+새로운 AKS 클러스터로 전환하려면 먼저 컨텍스트 정보를 가져와야 합니다.  
+
+```sh
+az aks get-credentials --resource-group $RESOURCE_GROUP_1 --name $AKS_CLUSTER_NAME_1
+az aks get-credentials --resource-group $RESOURCE_GROUP_2 --name $AKS_CLUSTER_NAME_2
+```
+
+### 2. **현재 설정된 컨텍스트 확인**
 먼저 현재 사용 중인 컨텍스트를 확인합니다.  
 
 ```sh
@@ -32,13 +46,6 @@ kubectl config get-contexts
 
 ---
 
-### 2. **새로운 AKS 클러스터 컨텍스트 가져오기**
-새로운 AKS 클러스터로 전환하려면 먼저 컨텍스트 정보를 가져와야 합니다.  
-
-```sh
-az aks get-credentials --resource-group $RESOURCE_GROUP_1 --name $AKS_CLUSTER_NAME_1
-az aks get-credentials --resource-group $RESOURCE_GROUP_2 --name $AKS_CLUSTER_NAME_2
-```
 
 이 명령어를 실행하면 현재 사용 중인 `~/.kube/config` 파일에 새로운 클러스터 정보가 추가됩니다.  
 

@@ -6,19 +6,20 @@ az network vnet list --output table
 
 2. **변수 설정**  
 ```bash
+
 SUBSCRIPTION_ID=$(az account show --query id --output tsv)
 az account set --subscription $SUBSCRIPTION_ID
-
 LOCATION="koreacentral"
 
 RESOURCE_GROUP_1="rg-spoke1"
 VNET_NAME_1="vnet-spoke1"
-AKS_CLUSTER_NAME_1="myPublicAKSCluster"
+AKS_SUBNET_NAME_1="snet-aks-private"
+AKS_CLUSTER_NAME_1="public-aks"
 
 RESOURCE_GROUP_2="rg-spoke2"
 VNET_NAME_2="vnet-spoke2"
-AKS_SUBNET_NAME="snet-aks-private"
-AKS_CLUSTER_NAME_2="myPrivateAKSCluster"
+AKS_SUBNET_NAME_2="snet-aks-private"
+AKS_CLUSTER_NAME_2="myaks"
 
 
 # 각 그룹의 Object ID 가져오기

@@ -216,6 +216,50 @@ module "dns" {
   hub_vnet_id        = azurerm_virtual_network.hub.id
 }
 
+# Spoke1 VNet 데이터 소스 추가
+data "azurerm_virtual_network" "spoke1" {
+  name                = var.vnet_spoke1_name
+  resource_group_name = "rg-spoke1"  # Spoke1의 리소스 그룹 이름
+}
+
+# VNet 피어링 설정 (Hub <-> Spoke1)
+resource "azurerm_virtual_network_peering" "hub_to_spoke1" {
+  name                      = "hub-to-spoke1"
+  resource_group_name       = azurerm_resource_group.hub_rg.name
+  virtual_network_name      = azurerm_virtual_network.hub.name
+  remote_virtual_network_id = data.azurerm_virtual_network.vnet_spoke1_name.id
+
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+}
+
+# Spoke VNet 데이터 소스 추가
+data "azurerm_virtual_network" "vnet_spoke1_name" {
+  name                = var.vnet_spoke1_name
+  resource_group_name = "rg-spoke1"  # Spoke1의 리소스 그룹 이름
+}
+
+# VNet 피어링 설정
+resource "azurerm_virtual_network_peering" "hub_to_spoke2" {
+  name                      = "hub-to-spoke2"
+  resource_group_name       = azurerm_resource_group.hub_rg.name
+  virtual_network_name      = azurerm_virtual_network.hub.name
+  remote_virtual_network_id = data.azurerm_virtual_network.vnet_spoke2_name.id
+
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+}
+
+# Spoke VNet 데이터 소스 추가
+data "azurerm_virtual_network" "vnet_spoke2_name" {
+  name                = var.vnet_spoke2_name
+  resource_group_name = "rg-spoke2"  # Spoke1의 리소스 그룹 이름
+}
+
 # Output 변수들
 output "resource_group_name" {
   value = azurerm_resource_group.hub_rg.name
