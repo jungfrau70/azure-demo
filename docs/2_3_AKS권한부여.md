@@ -62,28 +62,28 @@ echo "   - 개발자: $DEVELOPER_OBJECT_ID"
 ## 클러스터 사용자 (kubectl 사용 가능) - aks-operators 그룹에 부여
 ```bash
 az role assignment create --assignee $OPERATOR_GROUP_OBJECT_ID \
-    --role "Azure Kubernetes Service Cluster User Role" \
+    --role "Azure Kubernetes Service RBAC Reader" \
     --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_1/providers/Microsoft.ContainerService/managedClusters/$AKS_CLUSTER_NAME_1
 ```
 
 ## 클러스터 관리자 (kubectl + AKS 관리 가능) - aks-cluster-admins 그룹에 부여
 ```bash
 az role assignment create --assignee $CLUSTER_ADMIN_GROUP_OBJECT_ID \
-    --role "Azure Kubernetes Service Cluster Admin Role" \
+    --role "Azure Kubernetes Service RBAC Admin" \
     --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_1/providers/Microsoft.ContainerService/managedClusters/$AKS_CLUSTER_NAME_1
 ```
 
 ## AKS 리소스 관리자 (Azure Portal/CLI로 AKS 관리) - aks-admins 그룹에 부여
 ```bash
 az role assignment create --assignee $ADMIN_GROUP_OBJECT_ID \
-    --role "Azure Kubernetes Service Contributor Role" \
+    --role "Azure Kubernetes Service RBAC Cluster Admin" \
     --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_1
 ```
 
 ## 개발자 그룹 - 필요에 따라 추가 가능
 ```bash
 az role assignment create --assignee $DEVELOPER_GROUP_OBJECT_ID \
-    --role "Azure Kubernetes Service Cluster User Role" \
+    --role "Azure Kubernetes Service RBAC Reader" \
     --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_1/providers/Microsoft.ContainerService/managedClusters/$AKS_CLUSTER_NAME_1
 ```
 

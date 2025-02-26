@@ -144,15 +144,7 @@ variable "project_hub_name" {
   default     = ""  # 환경 변수에서 가져올 수 있도록 기본값을 비워둠
 }
 
-# variable "prefix" {
-#   type        = string
-#   description = "리소스 이름에 사용될 접두사"
-# }
 
-# variable "rg_hub_name" {
-#   type        = string
-#   description = "resource group name"
-# }
 variable "aks_node_size" {
   type        = string
   description = "AKS 노드 VM 크기"
@@ -164,12 +156,6 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
-
-# variable "spoke_vnet_id" {
-#   type        = string
-#   description = "Spoke VNet의 ID"
-#   default     = null  # 선택적으로 만들기 위해 기본값 null 설정
-# }
 
 variable "vnet_spoke1_name" {
   type        = string
