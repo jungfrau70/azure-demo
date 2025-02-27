@@ -15,6 +15,13 @@ sudo snap install docker
 sudo groupadd docker
 sudo usermod -aG docker $USER
 
+sudo snap install kubectl --classic
+sudo snap install helm --classic
+
+# API 서버 주소(private-aks-ingress) 추가
+vi /etc/hosts
+10.1.0.4 private-ak-rg-spoke-b6f97a-5fj42y00.6ae91f14-1cf4-4596-a6e9-cdf12cae3c1a.privatelink.koreacentral.azmk8s.io
+
 
 ```
 
