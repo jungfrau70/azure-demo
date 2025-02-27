@@ -1,0 +1,21 @@
+```sh
+
+STORAGE_RESOURCE_GROUP=rg-aks-cloudshell
+LOCATION=koreacentral
+STORAGE_ACCOUNT_NAME=cloudshell34507024sa
+STORAGE_FILE_SHARE_NAME=cloudshellfiles
+
+az group create --name $RESOURCE_GROUP --location $LOCATION
+
+az storage account create \
+  --name $STORAGE_ACCOUNT_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --location $LOCATION \
+  --sku Standard_LRS
+
+az storage share create \
+  --name cloudshellfiles \
+  --account-name $STORAGE_ACCOUNT_NAME \
+  --quota 10
+
+```

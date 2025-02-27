@@ -1,0 +1,46 @@
+ 
+**오퍼레이터, 운영자, 관리자 그룹을 생성하고 사용자를 추가**
+
+```bash
+
+SUBSCRIPTION_ID=$(az account show --query id --output tsv)
+az account set --subscription $SUBSCRIPTION_ID
+LOCATION="koreacentral"
+
+echo "SUBSCRIPTION_ID: $SUBSCRIPTION_ID" 
+echo "LOCATION: $LOCATION"
+
+# Variables
+STORAGE_RESOURCE_GROUP=rg-aks-cloudshell
+STORAGE_ACCOUNT_NAME=cloudshell34507024sa
+STORAGE_FILE_SHARE_NAME=cloudshellfiles
+LOCATION=koreacentral
+
+# 사용자의 `Object ID`
+OPERATOR_OBJECT_ID=$(az ad user show --id operator@jupyteronlinegmail.onmicrosoft.com --query id --output tsv)
+ADMIN_OBJECT_ID=$(az ad user show --id admin@jupyteronlinegmail.onmicrosoft.com --query id --output tsv)
+CLUSTER_ADMIN_OBJECT_ID=$(az ad user show --id clusteradmin@jupyteronlinegmail.onmicrosoft.com --query id --output tsv)
+DEVELOPER_OBJECT_ID=$(az ad user show --id developer@jupyteronlinegmail.onmicrosoft.com --query id --output tsv)
+
+# 확인
+echo "Operator: $OPERATOR_OBJECT_ID"
+echo "Admin: $ADMIN_OBJECT_ID"
+echo "Cluster Admin: $CLUSTER_ADMIN_OBJECT_ID"
+echo "Developer: $DEVELOPER_OBJECT_ID"
+
+for OBJECT_ID in $OPERATOR_OBJECT_ID $ADMIN_OBJECT_ID $CLUSTER_ADMIN_OBJECT_ID $DEVELOPER_OBJECT_ID; 
+do
+    # 1. '읽기 권한자 및 데이터 액세스' 또는 '스토리지 계정 기여자' 역할 할당
+    az role assignment create \
+    --assignee $OBJECT_ID \
+    --role "Reader and Data Access" \
+    --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$STORAGE_RESOURCE_GROUP/providers/Microsoft.Storage/storageAccounts/$STORAGE_ACCOUNT_NAME
+
+    # 2. '스토리지 파일 데이터 권한 있는 기여자' 역할 할당
+    az role assignment create \
+    --assignee $OBJECT_ID \
+    --role "Storage File Data SMB Share Contributor" \
+    --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$STORAGE_RESOURCE_GROUP/providers/Microsoft.Storage/storageAccounts/$STORAGE_ACCOUNT_NAME
+done
+
+```
