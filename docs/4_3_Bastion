@@ -9,3 +9,11 @@ echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packa
 
 sudo apt-get update
 sudo apt-get install azure-cli
+
+
+# # ACR 로그인
+# az acr login --name $ACR_NAME --resource-group $HUB_RG
+
+
+# # KeyVault 로그인
+# az keyvault secret set --vault-name $KEYVAULT_NAME --name $SECRET_NAME --value $SECRET_VALUE

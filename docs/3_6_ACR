@@ -45,7 +45,7 @@ STUDENT_NAME=ian # don't use spaces
 # ACR 생성
 az acr create --resource-group $HUB_RG --name $ACR_NAME --sku Basic
 
-# ACR 로그인
-az acr login --name $ACR_NAME --resource-group $HUB_RG
+# # ACR 로그인
+# az acr login --name $ACR_NAME --resource-group $HUB_RG
 
 

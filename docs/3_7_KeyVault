@@ -48,7 +48,7 @@ SECRET_VALUE="aks-secret-value"
 # KeyVault 생성
 az keyvault create --name $KEYVAULT_NAME --resource-group $HUB_RG --location $LOCATION
 
-# KeyVault 로그인
-az keyvault secret set --vault-name $KEYVAULT_NAME --name $SECRET_NAME --value $SECRET_VALUE
+# # KeyVault 로그인
+# az keyvault secret set --vault-name $KEYVAULT_NAME --name $SECRET_NAME --value $SECRET_VALUE
 
 
