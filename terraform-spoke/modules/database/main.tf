@@ -44,4 +44,23 @@ resource "azurerm_private_dns_zone_virtual_network_link" "db" {
   private_dns_zone_name = azurerm_private_dns_zone.db.name
   resource_group_name   = var.resource_group_name
   virtual_network_id    = var.vnet_id
+}
+
+resource "azurerm_subnet" "snet_db" {
+  name                 = var.subnet_name
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = var.vnet_name
+  address_prefixes     = [var.subnet_prefix]
+
+  delegation {
+    name = "fs"
+    service_delegation {
+      name = "Microsoft.DBforPostgreSQL/flexibleServers"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+        "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action",
+        "Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action"
+      ]
+    }
+  }
 } 

@@ -50,4 +50,20 @@ variable "tags" {
   type        = map(string)
   description = "리소스 태그"
   default     = {}
+}
+
+variable "vnet_name" {
+  type        = string
+  description = "The name of the virtual network"
+} 
+
+variable "subnet_name" {
+  type        = string
+  description = "The name of the subnet"
+} 
+
+
+variable "subnet_prefix" {
+  type        = string
+  description = "The prefix of the subnet"
 } 

@@ -84,12 +84,12 @@ LOCATION="koreacentral"
 
 RESOURCE_GROUP_1="rg-spoke1"
 VNET_NAME_1="vnet-spoke1"
-AKS_CLUSTER_NAME_1="myPublicAKSCluster"
+AKS_CLUSTER_NAME_1="public-aks"
 
 RESOURCE_GROUP_2="rg-spoke2"
 VNET_NAME_2="vnet-spoke2"
 AKS_SUBNET_NAME="snet-aks-private"
-AKS_CLUSTER_NAME_2="myPrivateAKSCluster"
+AKS_CLUSTER_NAME_2="myaks"
 
 PRIVATE_DNS_LINK_NAME="aksprivatednslink"
 PRIVATE_ENDPOINT_NAME="aksprivatednslink"
@@ -107,6 +107,18 @@ az network private-endpoint create \
     --private-connection-resource-id $PRIVATE_CONNECTION_RESOURCE_ID \
     --group-id "management" \
     --connection-name $PRIVATE_CONNECTION_NAME
+
+
+az network private-endpoint show \
+    --resource-group $RESOURCE_GROUP_2 \
+    --name $PRIVATE_ENDPOINT_NAME \
+    --query "customNetworkInterface.ipConfigurations[0].privateIpAddress" \
+    --output tsv
+
+az network private-endpoint show \
+    --resource-group $RESOURCE_GROUP_2 \
+    --name $PRIVATE_ENDPOINT_NAME \
+    --output tsv
 
 PRIVATE_IP=$(az network private-endpoint show 
     --resource-group $RESOURCE_GROUP_2 \
@@ -139,13 +151,13 @@ az network private-dns record-set a list \
 
 ## **2️⃣ Private DNS Zone 확인**  
 ```bash
-az network private-dns zone list --resource-group $RESOURCE_GROUP --output table
+az network private-dns zone list --resource-group $RESOURCE_GROUP_2 --output table
 ```
 
 
 ## **4️⃣ Private DNS Zone과 VNet 연결 확인**  
 ```bash
-az network private-dns link vnet list --resource-group $RESOURCE_GROUP --zone-name "privatelink.$LOCATION.azmk8s.io" --output table
+az network private-dns link vnet list --resource-group $RESOURCE_GROUP_2 --zone-name "privatelink.$LOCATION.azmk8s.io" --output table
 ```
 
 ## **5️⃣ Private DNS Zone과 AKS 연결 확인**

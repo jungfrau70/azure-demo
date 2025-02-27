@@ -59,4 +59,24 @@ variable "tags" {
   default     = {}
 }
 
+variable "jumpbox_admin_username" {
+  type        = string
+  description = "Admin username for the jumpbox VM"
+}
+
+variable "jumpbox_ssh_public_key" {
+  type        = string
+  description = "SSH public key for the jumpbox VM"
+}
+
+variable "rg_hub_name" {
+  type        = string
+  description = "Hub 리소스 그룹 이름"
+}
+
+variable "vnet_hub_name" {
+  type        = string
+  description = "Hub 가상 네트워크 이름"
+}
+
 # 추가 변수들은 필요에 따라 여기에 정의됩니다 

@@ -45,4 +45,23 @@ resource "azurerm_subnet" "subnets" {
   resource_group_name  = azurerm_resource_group.spoke.name
   virtual_network_name = azurerm_virtual_network.spoke.name
   address_prefixes     = each.value.address_prefixes
+}
+
+# Jumpbox 서브넷 생성
+resource "azurerm_subnet" "jumpbox_subnet" {
+  name                 = "snet-jumpbox"
+  resource_group_name  = var.rg_hub_name        # Hub 리소스 그룹 사용
+  virtual_network_name = var.vnet_hub_name      # Hub VNet 사용
+  address_prefixes     = ["10.0.10.0/24"]      # Hub VNet의 주소 범위에 맞게 수정
+}
+
+module "jumpbox" {
+  source = "./jumpbox"
+
+  environment         = var.environment
+  location           = var.location
+  resource_group_name = var.rg_hub_name         # Hub 리소스 그룹 사용
+  jumpbox_subnet_id   = azurerm_subnet.jumpbox_subnet.id
+  admin_username     = var.jumpbox_admin_username
+  ssh_public_key     = var.jumpbox_ssh_public_key
 } 

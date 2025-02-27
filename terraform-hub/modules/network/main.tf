@@ -1,6 +1,6 @@
 # Hub VNet 생성
 resource "azurerm_virtual_network" "hub" {
-  name                = "hub-vnet"
+  name                = "${var.project_name}-hub-vnet"
   location            = var.location
   resource_group_name = var.resource_group_name
   address_space       = ["10.0.0.0/16"]  # 일관된 주소 공간으로 수정
