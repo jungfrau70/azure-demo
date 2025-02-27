@@ -1,26 +1,54 @@
+az login --tenant jupyteronlinegmail.onmicrosoft.com
 
-1. **Vnet 목록 조회**  
-```bash
-az network vnet list --output table
-```
-
-2. **변수 설정**  
 ```bash
 
 SUBSCRIPTION_ID=$(az account show --query id --output tsv)
 az account set --subscription $SUBSCRIPTION_ID
 LOCATION="koreacentral"
 
-RESOURCE_GROUP_1="rg-spoke1"
-VNET_NAME_1="vnet-spoke1"
-AKS_SUBNET_NAME_1="snet-aks-private"
-AKS_CLUSTER_NAME_1="public-aks"
+echo "SUBSCRIPTION_ID: $SUBSCRIPTION_ID" 
+echo "LOCATION: $LOCATION"
 
-RESOURCE_GROUP_2="rg-spoke2"
-VNET_NAME_2="vnet-spoke2"
-AKS_SUBNET_NAME_2="snet-aks-private"
-AKS_CLUSTER_NAME_2="myaks"
+# Hub VNet
+HUB_VNET_NAME=Hub_VNET
+FW_SUBNET_NAME=AzureFirewallSubnet
+BASTION_SUBNET_NAME=AzureBastionSubnet
+HUB_VNET_PREFIX=10.0.0.0/22 # IP address range of the Virtual network (VNet).
+BASTION_SUBNET_PREFIX=10.0.0.128/26 # IP address range of the Bastion subnet 
+FW_SUBNET_PREFIX=10.0.0.0/26 # IP address range of the Firewall subnet
+JUMPBOX_SUBNET_PREFIX=10.0.0.64/26 # IP address range of the Jumpbox subnet
 
+# Spoke VNet
+SPOKE_VNET_NAME=Spoke_VNET
+JUMPBOX_SUBNET_NAME=JumpboxSubnet
+ENDPOINTS_SUBNET_NAME=endpoints-subnet
+APPGW_SUBNET_NAME=app-gw-subnet
+AKS_SUBNET_NAME=aks-subnet
+LOADBALANCER_SUBNET_NAME=loadbalancer-subnet
+SPOKE_VNET_PREFIX=10.1.0.0/22 # IP address range of the Virtual network (VNet).
+AKS_SUBNET_PREFIX=10.1.0.0/24 # IP address range of the AKS subnet
+LOADBALANCER_SUBNET_PREFIX=10.1.1.0/28 # IP address range of the Loadbalancer subnet
+APPGW_SUBNET_PREFIX=10.1.2.0/24 # IP address range of the Application Gateway subnet
+ENDPOINTS_SUBNET_PREFIX=10.1.1.16/28 # IP address range of the Endpoints subnet
+
+# Infrastructure
+HUB_RG=rg-hub
+SPOKE_RG=rg-spoke
+LOCATION=koreacentral 
+BASTION_NSG_NAME=Bastion_NSG
+JUMPBOX_NSG_NAME=Jumpbox_NSG
+AKS_NSG_NAME=Aks_NSG
+ENDPOINTS_NSG_NAME=Endpoints_NSG
+LOADBALANCER_NSG_NAME=Loadbalancer_NSG
+APPGW_NSG=Appgw_NSG
+FW_NAME=azure-firewall
+APPGW_NAME=AppGateway
+ROUTE_TABLE_NAME=spoke-rt
+AKS_IDENTITY_NAME=aks-msi
+JUMPBOX_VM_NAME=Jumpbox-VM
+AKS_CLUSTER_NAME=private-aks
+ACR_NAME="aksacr$RANDOM"
+STUDENT_NAME=ian # don't use spaces
 
 # 각 그룹의 Object ID 가져오기
 OPERATOR_GROUP_OBJECT_ID=$(az ad group show --group aks-operators --query id --output tsv)
@@ -46,7 +74,6 @@ echo "   - 관리자: $ADMIN_OBJECT_ID"
 echo "   - 클러스터 관리자: $CLUSTER_ADMIN_OBJECT_ID"
 echo "   - 개발자: $DEVELOPER_OBJECT_ID"
 
-```
 
 ### **사용자 그룹별 필요 권한**
 | 사용자 그룹 | 필요 역할 |
@@ -57,75 +84,34 @@ echo "   - 개발자: $DEVELOPER_OBJECT_ID"
 - **클러스터 관리자**(kubectl + 관리 작업 가능)나 **AKS 관리 작업을 수행할 사용자**는 추가적인 역할(`Admin Role`, `Contributor Role` 등)이 필요  
 
 
-# PUBLIC AKS 클러스터 권한 부여
-
 ## 클러스터 사용자 (kubectl 사용 가능) - aks-operators 그룹에 부여
-```bash
 az role assignment create --assignee $OPERATOR_GROUP_OBJECT_ID \
     --role "Azure Kubernetes Service RBAC Reader" \
-    --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_1/providers/Microsoft.ContainerService/managedClusters/$AKS_CLUSTER_NAME_1
-```
+    --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$SPOKE_RG/providers/Microsoft.ContainerService/managedClusters/$AKS_CLUSTER_NAME
 
 ## 클러스터 관리자 (kubectl + AKS 관리 가능) - aks-cluster-admins 그룹에 부여
-```bash
 az role assignment create --assignee $CLUSTER_ADMIN_GROUP_OBJECT_ID \
     --role "Azure Kubernetes Service RBAC Admin" \
-    --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_1/providers/Microsoft.ContainerService/managedClusters/$AKS_CLUSTER_NAME_1
-```
+    --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$SPOKE_RG/providers/Microsoft.ContainerService/managedClusters/$AKS_CLUSTER_NAME
 
 ## AKS 리소스 관리자 (Azure Portal/CLI로 AKS 관리) - aks-admins 그룹에 부여
-```bash
 az role assignment create --assignee $ADMIN_GROUP_OBJECT_ID \
     --role "Azure Kubernetes Service RBAC Cluster Admin" \
-    --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_1
-```
+    --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$SPOKE_RG
 
 ## 개발자 그룹 - 필요에 따라 추가 가능
-```bash
 az role assignment create --assignee $DEVELOPER_GROUP_OBJECT_ID \
     --role "Azure Kubernetes Service RBAC Reader" \
-    --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_1/providers/Microsoft.ContainerService/managedClusters/$AKS_CLUSTER_NAME_1
-```
-
-
-# PRIVATE AKS 클러스터 권한 부여
-
-## 클러스터 사용자 (kubectl 사용 가능) - aks-operators 그룹에 부여
-```bash
-az role assignment create --assignee $OPERATOR_GROUP_OBJECT_ID \
-    --role "Azure Kubernetes Service Cluster User Role" \
-    --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_2/providers/Microsoft.ContainerService/managedClusters/$AKS_CLUSTER_NAME_2
-```
-
-## 클러스터 관리자 (kubectl + AKS 관리 가능) - aks-cluster-admins 그룹에 부여
-```bash
-az role assignment create --assignee $CLUSTER_ADMIN_GROUP_OBJECT_ID \
-    --role "Azure Kubernetes Service Cluster Admin Role" \
-    --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_2/providers/Microsoft.ContainerService/managedClusters/$AKS_CLUSTER_NAME_2
-```
-
-## AKS 리소스 관리자 (Azure Portal/CLI로 AKS 관리) - aks-admins 그룹에 부여
-```bash
-az role assignment create --assignee $ADMIN_GROUP_OBJECT_ID \
-    --role "Azure Kubernetes Service Contributor Role" \
-    --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_2
-```
-
-## 개발자 그룹 - 필요에 따라 추가 가능
-```bash
-az role assignment create --assignee $DEVELOPER_GROUP_OBJECT_ID \
-    --role "Azure Kubernetes Service Cluster User Role" \
-    --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP_2/providers/Microsoft.ContainerService/managedClusters/$AKS_CLUSTER_NAME_2
-```
+    --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/$SPOKE_RG/providers/Microsoft.ContainerService/managedClusters/$AKS_CLUSTER_NAME
 
 
 # 권한 확인
-
-```bash
 az role assignment list --assignee $OPERATOR_GROUP_OBJECT_ID --all --output table
 az role assignment list --assignee $CLUSTER_ADMIN_GROUP_OBJECT_ID --all --output table
 az role assignment list --assignee $ADMIN_GROUP_OBJECT_ID --all --output table
 az role assignment list --assignee $DEVELOPER_GROUP_OBJECT_ID --all --output table
+
+
 ```
 
 

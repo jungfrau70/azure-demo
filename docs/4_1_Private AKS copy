@@ -63,7 +63,7 @@ az aks update \
   --name $AKS_CLUSTER_NAME \
   --enable-managed-identity
 
-# AKS Managed Identity ID 표시
+# AKS Managed Identity  ID 표시
 az aks show \
   --resource-group $SPOKE_RG \
   --name $AKS_CLUSTER_NAME \
@@ -91,4 +91,46 @@ az role assignment create \
   --role "Contributor" \
   --scope $APPGW_SCOPE
 
+
+# Helm 설치
+sudo snap install helm --classic
+sudo snap install kubectl --classic
+
+# API 서버 주소(private-aks-ingress) 추가
+vi /etc/hosts
+10.1.0.4 private-ak-rg-spoke-b6f97a-5fj42y00.6ae91f14-1cf4-4596-a6e9-cdf12cae3c1a.privatelink.koreacentral.azmk8s.io
+
+az aks get-credentials --resource-group $SPOKE_RG --name $AKS_CLUSTER_NAME
+kubectl config current-context
+kubectl get nodes
+
+# Helm (ingress-azure) 저장소 추가
+helm repo add ingress-azure https://appgwingress.blob.core.windows.net/ingress-azure-helm-package/
+helm repo update
+
+# AGIC 설치
+helm install ingress-azure ingress-azure/ingress-azure \
+  --namespace azure-ingress-basic \
+  --create-namespace \
+  --set appgw.usePrivateIP=true \
+  --set appgw.shared=true \
+  --set appgw.appgwName=$APPGW_NAME \
+  --set appgw.resourceGroup=$SPOKE_RG \
+  --set appgw.subscriptionId=$SUBSCRIPTION_ID \
+  --set appgw.subnetPrefix=$APPGW_SUBNET_PREFIX \
+  --set appgw.applicationGatewayID=$APPGW_SCOPE
+
+
+# AGIC 확인 (from Bastion VM)
+helm list -n azure-ingress-basic
+
+
+# Helm 차트 설치 (예제)
+# Helm을 사용하여 NGINX Ingress Controller를 설치하는 예제:
+
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+
+helm install nginx-ingress ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx --create-namespace
 
