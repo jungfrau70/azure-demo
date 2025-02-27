@@ -1,70 +1,137 @@
-## **Private AKS + Cloud Shell + Operator 시나리오**  
+az login --tenant jupyteronlinegmail.onmicrosoft.com
 
-관리자가 **Private AKS 클러스터를 생성**하고, 
-오퍼레이터가 **Cloud Shell을 사용하여 AKS 상태를 점검**하는 시나리오
+# Hub VNet
+HUB_VNET_NAME=Hub_VNET
+FW_SUBNET_NAME=AzureFirewallSubnet
+BASTION_SUBNET_NAME=AzureBastionSubnet
+HUB_VNET_PREFIX=10.0.0.0/22 # IP address range of the Virtual network (VNet).
+BASTION_SUBNET_PREFIX=10.0.0.128/26 # IP address range of the Bastion subnet 
+FW_SUBNET_PREFIX=10.0.0.0/26 # IP address range of the Firewall subnet
+JUMPBOX_SUBNET_PREFIX=10.0.0.64/26 # IP address range of the Jumpbox subnet
 
+# Spoke VNet
+SPOKE_VNET_NAME=Spoke_VNET
+JUMPBOX_SUBNET_NAME=JumpboxSubnet
+ENDPOINTS_SUBNET_NAME=endpoints-subnet
+APPGW_SUBNET_NAME=app-gw-subnet
+AKS_SUBNET_NAME=aks-subnet
+LOADBALANCER_SUBNET_NAME=loadbalancer-subnet
+SPOKE_VNET_PREFIX=10.1.0.0/22 # IP address range of the Virtual network (VNet).
+AKS_SUBNET_PREFIX=10.1.0.0/24 # IP address range of the AKS subnet
+LOADBALANCER_SUBNET_PREFIX=10.1.1.0/28 # IP address range of the Loadbalancer subnet
+APPGW_SUBNET_PREFIX=10.1.2.0/24 # IP address range of the Application Gateway subnet
+ENDPOINTS_SUBNET_PREFIX=10.1.1.16/28 # IP address range of the Endpoints subnet
 
-## **1️⃣ Private AKS 클러스터 생성**  
+# Infrastructure
+HUB_RG=rg-hub
+SPOKE_RG=rg-spoke
+LOCATION=koreacentral 
+BASTION_NSG_NAME=Bastion_NSG
+JUMPBOX_NSG_NAME=Jumpbox_NSG
+AKS_NSG_NAME=Aks_NSG
+ENDPOINTS_NSG_NAME=Endpoints_NSG
+LOADBALANCER_NSG_NAME=Loadbalancer_NSG
+APPGW_NSG=Appgw_NSG
+FW_NAME=azure-firewall
+APPGW_NAME=AppGateway
+ROUTE_TABLE_NAME=spoke-rt
+AKS_IDENTITY_NAME=aks-msi
+JUMPBOX_VM_NAME=Jumpbox-VM
+AKS_CLUSTER_NAME=private-aks
+ACR_NAME="aksacr$RANDOM"
+STUDENT_NAME=ian # don't use spaces
 
-### **🔹 ① VNet 및 서브넷 생성 (Private AKS용)**
-```bash
+az login
 
-# 변수 설정
+AKS_SUBNET_ID=$(az network vnet subnet show --resource-group $SPOKE_RG --vnet-name $SPOKE_VNET_NAME --name $AKS_SUBNET_NAME --query id -o tsv)
+echo $AKS_SUBNET_ID
 
-SUBSCRIPTION_ID=$(az account show --query id --output tsv)
-az account set --subscription $SUBSCRIPTION_ID
-LOCATION="koreacentral"
-
-RESOURCE_GROUP_1="rg-spoke1"
-VNET_NAME_1="vnet-spoke1"
-AKS_SUBNET_NAME_1="snet-aks-private"
-AKS_CLUSTER_NAME_1="public-aks"
-
-RESOURCE_GROUP_2="rg-spoke2"
-VNET_NAME_2="vnet-spoke2"
-AKS_SUBNET_NAME_2="snet-aks-private"
-AKS_CLUSTER_NAME_2="myaks"
-
-
-1. **리소스 그룹 생성**
-    ```bash
-    az group create --name $RESOURCE_GROUP_2 --location $LOCATION
-    ```
-
-2. **VNet 및 서브넷 생성**
-    ```bash
-    az network vnet create \
-    --resource-group $RESOURCE_GROUP_2 \
-    --name $VNET_NAME_2 \
-    --address-prefixes 10.3.0.0/16 \
-    --subnet-name $AKS_SUBNET_NAME_2 \
-    --subnet-prefix 10.3.1.0/24
-    ```
-
-    # ```bash
-    # az network vnet list --output table
-    # az network vnet subnet delete --resource-group $RESOURCE_GROUP_2 --vnet-name $VNET_NAME_2 --name $AKS_SUBNET_NAME_2
-    # az network vnet delete --resource-group $RESOURCE_GROUP --name $VNET_NAME
-    # ```
-   
-3. **Private AKS 클러스터 생성**    
-    ```bash
-    VNET_SUBNET_ID_2=$(az network vnet subnet show --resource-group $RESOURCE_GROUP_2 --vnet-name $VNET_NAME_2 --name $AKS_SUBNET_NAME_2 --query id --output tsv)   
-
-    az aks create \
-        --resource-group $RESOURCE_GROUP_2 \
-        --name $AKS_CLUSTER_NAME_2 \
-        --node-count 3 \
-        --network-plugin azure \
-        --vnet-subnet-id $VNET_SUBNET_ID_2 \
-        --enable-private-cluster \
-        --private-dns-zone "System" \
-        --enable-managed-identity \
-        --generate-ssh-keys
-    ```
+# AKS 생성 (from Bastion VM)
+az aks create \
+  --resource-group $SPOKE_RG \
+  --name $AKS_CLUSTER_NAME \
+  --node-count 3 \
+  --enable-private-cluster \
+  --network-plugin azure \
+  --vnet-subnet-id $AKS_SUBNET_ID \
+  --enable-managed-identity \
+  --generate-ssh-keys
 
 
-# az aks delete --resource-group $RESOURCE_GROUP_2 --name $AKS_CLUSTER_NAME_2 --yes --no-wait
+# AKS Managed Identity 활성화
+az aks update \
+  --resource-group $SPOKE_RG \
+  --name $AKS_CLUSTER_NAME \
+  --enable-managed-identity
 
----
+# AKS Managed Identity  ID 표시
+az aks show \
+  --resource-group $SPOKE_RG \
+  --name $AKS_CLUSTER_NAME \
+  --query "identityProfile.kubeletidentity.clientId" \
+  --output tsv
+
+MANAGED_IDENTITY_CLIENT_ID=$(az aks show \
+--resource-group $SPOKE_RG \
+--name $AKS_CLUSTER_NAME \
+--query "identityProfile.kubeletidentity.clientId" \
+--output tsv)
+
+echo $MANAGED_IDENTITY_CLIENT_ID
+
+APPGW_SCOPE=$(az network application-gateway show \
+  --name $APPGW_NAME \
+  --resource-group $SPOKE_RG \
+  --query "id" \
+  --output tsv)
+echo $APPGW_SCOPE
+
+# Application Gateway에 권한 부여
+az role assignment create \
+  --assignee $MANAGED_IDENTITY_CLIENT_ID \
+  --role "Contributor" \
+  --scope $APPGW_SCOPE
+
+
+# Helm 설치
+sudo snap install helm --classic
+sudo snap install kubectl --classic
+
+# API 서버 주소(private-aks-ingress) 추가
+vi /etc/hosts
+10.1.0.4 private-ak-rg-spoke-b6f97a-5fj42y00.6ae91f14-1cf4-4596-a6e9-cdf12cae3c1a.privatelink.koreacentral.azmk8s.io
+
+az aks get-credentials --resource-group $SPOKE_RG --name $AKS_CLUSTER_NAME
+kubectl config current-context
+kubectl get nodes
+
+# Helm (ingress-azure) 저장소 추가
+helm repo add ingress-azure https://appgwingress.blob.core.windows.net/ingress-azure-helm-package/
+helm repo update
+
+# AGIC 설치
+helm install ingress-azure ingress-azure/ingress-azure \
+  --namespace azure-ingress-basic \
+  --create-namespace \
+  --set appgw.usePrivateIP=true \
+  --set appgw.shared=true \
+  --set appgw.appgwName=$APPGW_NAME \
+  --set appgw.resourceGroup=$SPOKE_RG \
+  --set appgw.subscriptionId=$SUBSCRIPTION_ID \
+  --set appgw.subnetPrefix=$APPGW_SUBNET_PREFIX \
+  --set appgw.applicationGatewayID=$APPGW_SCOPE
+
+
+# AGIC 확인 (from Bastion VM)
+helm list -n azure-ingress-basic
+
+
+# Helm 차트 설치 (예제)
+# Helm을 사용하여 NGINX Ingress Controller를 설치하는 예제:
+
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+
+helm install nginx-ingress ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx --create-namespace
 

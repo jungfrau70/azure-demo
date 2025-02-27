@@ -1,3 +1,26 @@
+
+# user : azureuser
+# password : bright2n@1234
+
+```bash
+
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+sudo apt-get update && sudo apt-get install -y ca-certificates curl
+sudo curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+rm kubectl
+
+sudo snap install docker
+sudo groupadd docker
+sudo usermod -aG docker $USER
+
+
+```
+
+
+##############################################################
+
 # JUMPBOX 
 
 uname -a
@@ -17,3 +40,5 @@ sudo apt-get install azure-cli
 
 # # KeyVault 로그인
 # az keyvault secret set --vault-name $KEYVAULT_NAME --name $SECRET_NAME --value $SECRET_VALUE
+
+

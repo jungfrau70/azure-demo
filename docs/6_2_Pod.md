@@ -30,6 +30,10 @@ Azure Container Registry(ACR) 계정을 만들려면 Azure CLI 또는 Azure Port
    ```
 
 
+# ACR 로그인
+az acr login --name $ACR_NAME --resource-group $HUB_RG
+
+
 
 
 
