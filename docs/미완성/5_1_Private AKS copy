@@ -46,56 +46,6 @@ az login
 AKS_SUBNET_ID=$(az network vnet subnet show --resource-group $SPOKE_RG --vnet-name $SPOKE_VNET_NAME --name $AKS_SUBNET_NAME --query id -o tsv)
 echo $AKS_SUBNET_ID
 
-# AKS 생성 (from Bastion VM)
-az aks create \
-  --resource-group $SPOKE_RG \
-  --name $AKS_CLUSTER_NAME \
-  --node-count 3 \
-  --enable-private-cluster \
-  --network-plugin azure \
-  --vnet-subnet-id $AKS_SUBNET_ID \
-  --generate-ssh-keys
-
-
-# AKS Managed Identity 활성화
-az aks update \
-  --resource-group $SPOKE_RG \
-  --name $AKS_CLUSTER_NAME \
-  --enable-managed-identity
-
-# AKS Managed Identity  ID 표시
-az aks show \
-  --resource-group $SPOKE_RG \
-  --name $AKS_CLUSTER_NAME \
-  --query "identityProfile.kubeletidentity.clientId" \
-  --output tsv
-
-MANAGED_IDENTITY_CLIENT_ID=$(az aks show \
---resource-group $SPOKE_RG \
---name $AKS_CLUSTER_NAME \
---query "identityProfile.kubeletidentity.clientId" \
---output tsv)
-
-echo $MANAGED_IDENTITY_CLIENT_ID
-
-APPGW_SCOPE=$(az network application-gateway show \
-  --name $APPGW_NAME \
-  --resource-group $SPOKE_RG \
-  --query "id" \
-  --output tsv)
-echo $APPGW_SCOPE
-
-# Application Gateway에 권한 부여
-az role assignment create \
-  --assignee $MANAGED_IDENTITY_CLIENT_ID \
-  --role "Contributor" \
-  --scope $APPGW_SCOPE
-
-
-# Helm 설치
-sudo snap install helm --classic
-sudo snap install kubectl --classic
-
 # API 서버 주소(private-aks-ingress) 추가
 vi /etc/hosts
 10.1.0.4 private-ak-rg-spoke-b6f97a-5fj42y00.6ae91f14-1cf4-4596-a6e9-cdf12cae3c1a.privatelink.koreacentral.azmk8s.io

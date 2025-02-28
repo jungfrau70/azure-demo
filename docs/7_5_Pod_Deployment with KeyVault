@@ -1,0 +1,47 @@
+## **1️⃣ 기본 Pod 배포**
+
+# WordPress Pod 매니페스트 작성
+cat > wordpress-pod.yaml << EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: wordpress
+spec:
+  containers:
+  - name: wordpress
+    image: ${ACR_NAME}/wordpress:v1
+    ports:
+    - containerPort: 80
+EOF
+
+# Pod 배포
+kubectl apply -f wordpress-pod.yaml
+
+## **2️⃣ KeyVault 통합 Pod 배포**
+
+# KeyVault에 시크릿 저장
+az keyvault secret set \
+    --vault-name $KEYVAULT_NAME \
+    --name "wordpress-db-password" \
+    --value "MySecurePassword123!"
+
+# KeyVault 통합 Pod 매니페스트 작성
+cat > wordpress-pod-keyvault.yaml << EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: wordpress-secure
+spec:
+  containers:
+  - name: wordpress
+    image: ${ACR_NAME}/wordpress:v1
+    env:
+    - name: WORDPRESS_DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: wordpress-secret
+          key: password
+EOF
+
+# Pod 배포
+kubectl apply -f wordpress-pod-keyvault.yaml 

@@ -1,0 +1,68 @@
+## **0️⃣ Docker 설치 및 설정**
+
+# 필요한 패키지 설치
+sudo apt-get update
+sudo apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+
+# Docker의 공식 GPG 키 추가
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+# Docker 리포지토리 설정
+echo \
+  "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Docker 설치
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+
+# Docker 서비스 시작 및 부팅 시 자동 시작 설정
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Docker 그룹에 사용자 추가
+sudo usermod -aG docker $USER
+
+# 변경사항 적용을 위해 세션 재접속
+echo "Docker 설치가 완료되었습니다. 새로운 세션으로 다시 접속해주세요."
+exit
+
+# 다시 SSH 접속 후 진행
+
+# Docker 설치 확인
+docker --version
+docker ps
+
+
+mkdir -p ~/workload && cd ~/workload
+
+sudo docker build .
+sudo docker images
+
+sudo docker build -t my-wordpress:1.0 .
+sudo docker images
+
+sudo docker run -d -p 8080:80 my-wordpress:1.0
+
+sudo docker ps
+
+sudo docker stop <container_id>
+
+sudo docker logs <container_id>
+
+<!-- sudo docker rm <container_id>
+
+sudo docker rmi <image_id> -->
+
+
+
+
+
+
+
+

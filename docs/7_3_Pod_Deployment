@@ -1,0 +1,18 @@
+## **1️⃣ 기본 Pod 배포**
+
+# WordPress Pod 매니페스트 작성
+cat > wordpress-pod.yaml << EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: wordpress
+spec:
+  containers:
+  - name: wordpress
+    image: ${ACR_NAME}/wordpress:v1
+    ports:
+    - containerPort: 80
+EOF
+
+# Pod 배포
+kubectl apply -f wordpress-pod.yaml

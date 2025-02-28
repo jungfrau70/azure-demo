@@ -1,0 +1,53 @@
+# 환경 변수 설정
+HUB_RG=rg-hub
+SPOKE_RG=rg-spoke
+LOCATION=koreacentral
+AKS_CLUSTER_NAME=private-aks
+
+# ACR 정보 가져오기
+ACR_NAME=$(az acr list --resource-group $HUB_RG --query "[0].name" -o tsv)
+ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --resource-group $HUB_RG --query "loginServer" -o tsv)
+
+echo "ACR_NAME: $ACR_NAME"
+echo "ACR_LOGIN_SERVER: $ACR_LOGIN_SERVER"
+
+## **3️⃣ Dockerfile 작성 및 이미지 빌드**
+
+# 작업 디렉토리 생성
+mkdir -p ~/aks-workshop && cd ~/aks-workshop
+
+# Dockerfile 작성
+cat > Dockerfile << EOF
+FROM wordpress:latest
+ENV WORDPRESS_DB_HOST=mysql
+ENV WORDPRESS_DB_USER=wordpress
+ENV WORDPRESS_DB_PASSWORD=wordpress
+ENV WORDPRESS_DB_NAME=wordpress
+EXPOSE 80
+EOF
+
+# 이미지 빌드
+sudo docker build -t wordpress:v1 .
+
+## **4️⃣ ACR 인증 및 이미지 업로드**
+
+# ACR 토큰 획득 및 Docker 로그인
+ACCESS_TOKEN=$(az acr login --name $ACR_NAME --expose-token --query accessToken -o tsv)
+echo $ACCESS_TOKEN | sudo docker login ${ACR_LOGIN_SERVER} -u 00000000-0000-0000-0000-000000000000 --password-stdin
+
+echo "ACCESS_TOKEN: $ACCESS_TOKEN"
+
+# 이미지 태그 설정
+sudo docker tag wordpress:v1 ${ACR_LOGIN_SERVER}/wordpress:v1
+
+# ACR에 이미지 푸시
+sudo docker push ${ACR_LOGIN_SERVER}/wordpress:v1
+
+# 업로드된 이미지 확인
+az acr repository list --name $ACR_NAME --output table
+
+# 이미지 상세 정보 확인
+az acr repository show-tags \
+    --name $ACR_NAME \
+    --repository wordpress \
+    --output table 
